@@ -14,3 +14,11 @@ gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0
 gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go ./examples/script.php" --output-http-track-response
 gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="/path/to/bin/gorc ./examples/script.php" --output-http-track-response
 ```
+
+- NodeJS
+
+```shell
+gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go node examples/script.js" --output-http-track-response
+gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go ./examples/script.js" --output-http-track-response
+gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="/path/to/bin/gorc ./examples/script.js" --output-http-track-response
+```
