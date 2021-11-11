@@ -2,6 +2,24 @@
 
 > [GoReplay](https://github.com/buger/goreplay) middleware for compare response, support any program languages
 
+## Install
+
+- go install
+
+```shell
+go install github.com/shockerli/gorc@latest
+```
+
+- go build
+
+```shell
+git clone https://github.com/shockerli/gorc
+
+cd gorc
+
+go build .
+```
+
 ## Usage
 
 > `--input-raw=":8001"`: original service port, which be recorded

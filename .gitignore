@@ -20,6 +20,7 @@
 *.dll
 *.so
 *.dylib
+*.pprof
 
 # Test binary, built with `go test -c`
 *.test
@@ -27,10 +28,7 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
-
-### Go Patch ###
+### Go Dependency ###
 /vendor/
 /Godeps/
 
@@ -40,4 +38,6 @@
 ### SVN ###
 .svn/
 
+.DS_Store
 /tmp
+gorc
