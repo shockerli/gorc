@@ -2,6 +2,14 @@
 
 > [GoReplay](https://github.com/buger/goreplay) middleware for compare response, support any program languages
 
+## Requirements
+
+- `GoReplay`
+
+Download the latest binary from https://github.com/buger/goreplay/releases
+or [compile by yourself](https://github.com/buger/goreplay/wiki/Compilation)
+or `brew install gor` in macOS
+
 ## Install
 
 - go install
@@ -23,6 +31,7 @@ go build .
 ## Usage
 
 > `--input-raw=":8001"`: original service port, which be recorded
+>
 > `--output-http="http://127.0.0.1:8002"`: replay request to another service
 
 - PHP
@@ -40,3 +49,9 @@ gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0
 gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go ./examples/script.js" --output-http-track-response
 gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="/path/to/bin/gorc ./examples/script.js" --output-http-track-response
 ```
+
+- Any other programming language your machine supports
+
+## License
+
+This project is under the terms of the [MIT](LICENSE) license.
