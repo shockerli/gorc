@@ -3,11 +3,17 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
+	"strings"
+	"syscall"
 	"time"
 )
 
@@ -18,15 +24,18 @@ const (
 )
 
 type Request struct {
-	Time   time.Duration `json:"time"`
-	Method string        `json:"method"`
-	URI    string        `json:"uri"`
-	Proto  string        `json:"proto"`
-	Body   string        `json:"body"`
+	StartAt time.Duration `json:"time"`
+	Latency time.Duration `json:"latency"`
+	Header  http.Header   `json:"header"`
+	Method  string        `json:"method"`
+	URI     string        `json:"uri"`
+	Proto   string        `json:"proto"`
+	Body    string        `json:"body"`
 }
 
 type Response struct {
-	Time       time.Duration `json:"time"`
+	StartAt    time.Duration `json:"time"`
+	Latency    time.Duration `json:"latency"`
 	Header     http.Header   `json:"header"`
 	Status     string        `json:"status"`
 	StatusCode int           `json:"status_code"`
@@ -35,20 +44,31 @@ type Response struct {
 }
 
 type Capture struct {
-	Request          Request  `json:"request"`
-	OriginalResponse Response `json:"original_response"`
-	ReplayedResponse Response `json:"replayed_response"`
+	ReqID            string        `json:"req_id"`
+	Latency          time.Duration `json:"latency"`
+	Request          Request       `json:"request"`
+	OriginalResponse Response      `json:"original_response"`
+	ReplayedResponse Response      `json:"replayed_response"`
 }
 
-var store = map[string]*Capture{}
+type Script struct {
+	Stdin  io.Writer
+	Stdout io.Reader
+}
+
+var reqs = map[string]*Capture{}
+var spt *Script
 
 func main() {
+	// exec script command
+	execScript()
+
 	// scan stdin
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		encoded := scanner.Bytes()
 		buf := make([]byte, len(encoded)/2)
-		hex.Decode(buf, encoded)
+		_, _ = hex.Decode(buf, encoded)
 
 		process(buf)
 	}
@@ -69,39 +89,78 @@ func process(buf []byte) {
 	reqID := string(meta[1])
 	payload := buf[headerSize:]
 
-	_, ok := store[reqID]
+	data, ok := reqs[reqID]
 	if !ok {
-		store[reqID] = &Capture{}
+		data = &Capture{
+			ReqID: reqID,
+		}
+		reqs[reqID] = data
 	}
-	pt, _ := time.ParseDuration(string(meta[2]))
+	pt, _ := time.ParseDuration(string(meta[2]) + "ns")
+	latency, _ := time.ParseDuration(string(meta[3]) + "ns")
 
 	Debug("Received payload:", string(buf))
 
 	switch payloadType {
 	case RequestPayload: // Request
 		req := parseReq(payload)
-		req.Time = pt
-		store[reqID].Request = req
+		req.StartAt = pt
+		req.Latency = latency
+		data.Request = req
 
 		// Emitting data back
-		os.Stdout.Write(encode(buf))
+		_, _ = os.Stdout.Write(encode(buf))
 
 	case ResponsePayload: // Original response
 		res := parseRes(payload)
-		res.Time = pt
-		store[reqID].OriginalResponse = res
+		res.StartAt = pt
+		res.Latency = latency
+		data.OriginalResponse = res
 
 	case ReplayedResponsePayload: // Replayed response
 		res := parseRes(payload)
-		res.Time = pt
-		store[reqID].ReplayedResponse = res
+		res.StartAt = pt
+		res.Latency = latency
+		data.ReplayedResponse = res
+		data.Latency = data.ReplayedResponse.StartAt - data.Request.StartAt
 
-		// TODO: callback
-		//spew.Fdump(os.Stderr, store[reqID])
+		// script callback
+		v, _ := json.Marshal(data)
+		v = append(v, '\n')
+		_, _ = spt.Stdin.Write(v)
 
 		// del data
-		delete(store, reqID)
+		delete(reqs, reqID)
 	}
+}
+
+func execScript() {
+	if len(os.Args) < 2 {
+		Log("[ERROR] missing callback script")
+	}
+
+	cmd := exec.CommandContext(context.Background(), os.Args[1], os.Args[2:]...)
+	cmd.Stderr = os.Stderr
+
+	spt = new(Script)
+	spt.Stdin, _ = cmd.StdinPipe()
+	spt.Stdout, _ = cmd.StdoutPipe()
+
+	go func() {
+		var err error
+		if err = cmd.Start(); err == nil {
+			err = cmd.Wait()
+		}
+		if err != nil {
+			if e, ok := err.(*exec.ExitError); ok {
+				status := e.Sys().(syscall.WaitStatus)
+				if status.Signal() == syscall.SIGKILL /*killed or context canceled */ {
+					return
+				}
+			}
+			Debug(fmt.Sprintf("[SCRIPT] command[%q] error: %q", strings.Join(os.Args[1:], " "), err.Error()))
+		}
+	}()
 }
 
 func encode(buf []byte) []byte {
@@ -112,10 +171,14 @@ func encode(buf []byte) []byte {
 	return dst
 }
 
+func Log(args ...interface{}) {
+	_, _ = fmt.Fprintf(os.Stderr, "%s ", time.Now().Format("2006-01-02 15:04:05.000000"))
+	_, _ = fmt.Fprintln(os.Stderr, args...)
+}
+
 func Debug(args ...interface{}) {
 	if os.Getenv("DEBUG") != "" {
-		fmt.Fprintf(os.Stderr, "[%s] ", time.Now().Format("2006-01-02 15:04:05.000000"))
-		fmt.Fprintln(os.Stderr, args...)
+		Log(args...)
 	}
 }
 
@@ -123,10 +186,11 @@ func parseReq(buf []byte) Request {
 	req, _ := http.ReadRequest(bufio.NewReader(bytes.NewReader(buf)))
 	var p []byte
 	if req.Body != nil {
-		defer req.Body.Close()
+		defer func() { _ = req.Body.Close() }()
 		p, _ = ioutil.ReadAll(req.Body)
 	}
 	return Request{
+		Header: req.Header,
 		Method: req.Method,
 		URI:    req.RequestURI,
 		Proto:  req.Proto,
@@ -138,7 +202,7 @@ func parseRes(buf []byte) Response {
 	res, _ := http.ReadResponse(bufio.NewReader(bytes.NewReader(buf)), nil)
 	var p []byte
 	if res.Body != nil {
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		p, _ = ioutil.ReadAll(res.Body)
 	}
 	return Response{
