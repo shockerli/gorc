@@ -18,7 +18,7 @@ class Script
 
     public function start()
     {
-        $this->log('starting...');
+        $this->log('gorc script starting...');
 
         while (!feof(STDIN)) {
             // read input
@@ -31,14 +31,15 @@ class Script
             $data['replayed_response']['body'] = $replayed = json_decode($data['replayed_response']['body'], true);
 
             // compare response body
-            $this->log($this->sortArray($original) == $this->sortArray($replayed) ? 'Compare pass' : 'Compare fail');
+            $compare = $this->sortArray($original) == $this->sortArray($replayed);
+            $this->log(sprintf('[ReqId:%s] Compare %s', $data['req_id'], $compare ? 'pass' : 'fail'));
             $this->log($data);
         }
     }
 
     private function log($data)
     {
-        $data = is_scalar($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT);
+        $data = is_scalar($data) ? $data : json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $data = date('Y-m-d H:i:s') . ' ' . $data;
         $data .= "\n";
         file_put_contents($this->logFile, $data, FILE_APPEND);

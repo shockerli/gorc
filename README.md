@@ -1,16 +1,17 @@
 # gorc
 
-> [GoReplay](https://github.com/buger/goreplay) middleware for compare response, support any program languages
+HTTP API traffic recording and replay middleware based on [GoReplay](https://github.com/buger/goreplay), can be used for
+migration and refactoring testing
 
 ## Requirements
 
-- `GoReplay`
+`gorc` is a middleware of `GoReplay`, so you should install `GoReplay` first.
 
 Download the latest binary from https://github.com/buger/goreplay/releases
 or [compile by yourself](https://github.com/buger/goreplay/wiki/Compilation)
 or `brew install gor` in macOS
 
-## Install
+## Install `gorc`
 
 - go install
 
@@ -33,21 +34,57 @@ go build .
 > `--input-raw=":8001"`: original service port, which be recorded
 >
 > `--output-http="http://127.0.0.1:8002"`: replay request to another service
+>
+> `--middleware="${path-of-gorc} ${command-of-script}"`
 
 - PHP
 
 ```shell
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go php examples/script.php" --output-http-track-response
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go ./examples/script.php" --output-http-track-response
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="/path/to/bin/gorc ./examples/script.php" --output-http-track-response
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="go run gorc.go php examples/script.php"
+
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="go run gorc.go ./examples/script.php"
+
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="/path/to/bin/gorc ./examples/script.php"
 ```
 
 - NodeJS
 
 ```shell
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go node examples/script.js" --output-http-track-response
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="go run gorc.go ./examples/script.js" --output-http-track-response
-gor --input-raw=":8001" --input-raw-track-response --output-http="http://127.0.0.1:8002" --middleware="/path/to/bin/gorc ./examples/script.js" --output-http-track-response
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="go run gorc.go node examples/script.js"
+
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="go run gorc.go ./examples/script.js"
+
+gor \
+    --input-raw-track-response \
+    --output-http-track-response \
+    --input-raw=":8001" \
+    --output-http="http://127.0.0.1:8002" \
+    --middleware="/path/to/bin/gorc ./examples/script.js"
 ```
 
 - Any other programming language your machine supports
