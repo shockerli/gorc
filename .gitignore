@@ -41,3 +41,6 @@
 .DS_Store
 /tmp
 gorc
+
+### GoReleaser ###
+dist
