@@ -1,19 +1,18 @@
 # gorc
 
-HTTP API traffic recording and replay middleware based on [GoReplay](https://github.com/buger/goreplay), can be used for
-migration and refactoring testing.
+基于 [GoReplay](https://github.com/buger/goreplay) 实现的 HTTP API 流量录制与重放中间件，可用于服务接口迁移、重构、测试等，比如对比重构接口的输入输出是否一致。
 
-English | [中文](README_ZH.md)
+中文 | [English](README.md)
 
-## Requirements
+## 依赖
 
-`gorc` is a middleware of `GoReplay`, so you should install `GoReplay` first.
+`gorc` 是一个 `GoReplay` 中间件，所以需先安装 `GoReplay`。
 
-Download the latest binary from https://github.com/buger/goreplay/releases
-or [compile by yourself](https://github.com/buger/goreplay/wiki/Compilation)
-or `brew install gor` in macOS
+- [或] [下载最新的二进制](https://github.com/buger/goreplay/releases)
+- [或] [按文档自行编译二进制](https://github.com/buger/goreplay/wiki/Compilation)
+- [或] 如果是 macOS 系统，直接使用 `brew install gor` 安装
 
-## Install `gorc`
+## 安装
 
 - go install
 
@@ -31,15 +30,17 @@ cd gorc
 go build .
 ```
 
-## Usage
+## 使用
 
-> `--input-raw=":8001"`: original service port, which be recorded
+> `--input-raw=":8001"`: 被捕获的原服务端口
 >
-> `--output-http="http://127.0.0.1:8002"`: replay request to another service
+> `--output-http="http://127.0.0.1:8002"`: 流量请求重放的新服务地址
 >
-> `--middleware="${path-of-gorc} ${command-or-script}"`: `gor` middleware command
+> `--middleware="${path-of-gorc} ${command-or-script}"`: `GoReplay` 中间件命令配置，`gorc` 路径 + 命令/脚本
 
 - PHP
+
+[PHP](examples/script.php) 示例就是个对比两个接口响应结构是否一致的脚本。
 
 ```shell
 gor \
@@ -89,22 +90,24 @@ gor \
     --middleware="/path/to/bin/gorc ./examples/script.js"
 ```
 
-- Any other programming language your machine supports
+- 任何其他命令、软件、或机器上所支持的语言脚本
 
-## Datatype
+## 数据
 
-Your custom script, read line from `STDIN` per request:
+`gorc` 传递给脚本/命令的每个请求的数据，包括原请求、原响应、重放响应。
+
+自己写的脚本，每次从 `STDIN` 读取的每一行数据就是如下 JSON 格式：
 
 ```json5
 {
-  // uuid, GoReplay generate the request unique id
+  // GoReplay 生成的唯一请求ID
   "req_id": "f33e1bab7f0000013e9b304d",
-  // whole time: ns
+  // 整个用时，包括重放流量
   "latency": 1137963000,
   "request": {
-    // unit: ns
+    // 记录的时间戳（纳秒）
     "time": 1636958850332299000,
-    // unit: ns
+    // 耗时（纳秒）
     "latency": 0,
     "header": {
       "Accept": [
@@ -132,11 +135,13 @@ Your custom script, read line from `STDIN` per request:
     "method": "POST",
     "uri": "/es/getTaskList",
     "proto": "HTTP/1.1",
+    // 请求体
     "body": {
       "key": "kkk",
       "type": 1
     }
   },
+  // 原始请求的响应信息
   "original_response": {
     "time": 1636958850404046000,
     "latency": 76000,
@@ -166,6 +171,7 @@ Your custom script, read line from `STDIN` per request:
       "msg": "success"
     }
   },
+  // 重放请求的响应信息
   "replayed_response": {
     "time": 1636958851470262000,
     "latency": 21424000,
@@ -183,6 +189,7 @@ Your custom script, read line from `STDIN` per request:
     "status": "200 OK",
     "status_code": 200,
     "proto": "HTTP/1.1",
+    // 重放请求的响应体
     "body": {
       "code": 200,
       "data": [],
@@ -192,6 +199,6 @@ Your custom script, read line from `STDIN` per request:
 }
 ```
 
-## License
+## 协议
 
-This project is under the terms of the [MIT](LICENSE) license.
+本项目基于 [MIT](LICENSE) 协议开放源代码。
