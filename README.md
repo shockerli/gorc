@@ -1,7 +1,6 @@
 # gorc
 
-HTTP API traffic recording and replay middleware based on [GoReplay](https://github.com/buger/goreplay), can be used for
-migration and refactoring testing.
+HTTP API traffic recording and replay middleware based on [GoReplay](https://github.com/buger/goreplay), can be used for migration and refactoring testing.
 
 English | [中文](README_ZH.md)
 
@@ -14,6 +13,10 @@ or [compile by yourself](https://github.com/buger/goreplay/wiki/Compilation)
 or `brew install gor` in macOS
 
 ## Install `gorc`
+
+- download binary
+
+  https://github.com/shockerli/gorc/releases
 
 - go install
 

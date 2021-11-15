@@ -14,6 +14,10 @@
 
 ## 安装
 
+- 下载预编译的二进制
+
+  https://github.com/shockerli/gorc/releases
+
 - go install
 
 ```shell
